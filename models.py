@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 
 
+
 db = SQLAlchemy()
 DEFAULT_IMAGE_URL = 'https://tse2.mm.bing.net/th?id=OIP.pwTChrJBhUgphNJ8DlLg3QHaH7&pid=Api&P=0&h=180'
 
@@ -28,7 +29,7 @@ class User(db.Model):
 
 
 class Post(db.Model):
-    """Post class"""
+    """Post model class"""
 
     __tablename__ = "posts"
 
@@ -39,6 +40,35 @@ class Post(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     user = db.relationship('User')
+
+    post_tags = db.relationship('PostTag', backref='post')
+    tags = db.relationship('Tag', secondary='post_tags', backref='posts')
+
+
+
+
+class Tag(db.Model):
+    """Tag model class"""
+
+    __tablename__ = "tags"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text, nullable=False, unique=True)
+
+    post_tags = db.relationship('PostTag', backref='tag')
+    posts = db.relationship('Post', secondary='post_tags', backref='tags')
+
+
+class PostTag(db.Model):
+    """PostTag model class"""
+
+    __tablename__ = "post_tags"
+
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey("tags.id"), primary_key=True)
+
+
+
 
 def connect_db(app):
     db.app = app

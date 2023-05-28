@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, flash
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User, Post
+from models import db, connect_db, User, Post, Tag, TagPost
 
 app = Flask(__name__)
 
@@ -87,7 +87,8 @@ def delete_user(user_id):
 def new_post_form(user_id):
     user = User.query.get_or_404(user_id)
     user_full_name = User.full_name(user)
-    return render_template('new-post.html', user_full_name)
+    tags = Tag.query.all()
+    return render_template('new-post.html', user_full_name, user=user, tags=tags)
 
 @app.route('/users/<int:user_id>/posts/new', methods = ['POST'])
 def new_post_submit(user_id):
@@ -103,7 +104,8 @@ def new_post_submit(user_id):
 @app.route('/posts/<int:post_id>')
 def show_post(post_id):
     post = Post.query.get_or_404(post_id)
-    return render_template('show-post.html', post=post)
+    post_tags = post.post_tags
+    return render_template('show-post.html', post=post, post_tags=post_tags)
 
 @app.route('/posts/<int:post_id>/edit', methods=['GET'])
 def edit_post_form(post_id):
@@ -127,3 +129,57 @@ def delete_post(post_id):
     db.session.commit()
     return redirect('/users')
 
+
+
+# #####################################################################
+
+
+@app.route('/tags')
+def list_tags():
+    tags = Tag.query.all()
+    return render_template('tags.html', tags=tags)
+
+
+@app.route('/tags/<int:tag_id>')
+def show_tag(tag_id):
+    tag = Tag.query.get_or_404(tag_id)
+    return render_template('show-tag.html', tag=tag)
+
+
+@app.route('/tags/new')
+def new_tag_form():
+    return render_template('new-tag.html')
+
+
+@app.route('/tags/new')
+def new_tag_submit():
+    new_tag = Tag(
+        id = request.form['id'],
+        name = request.form['name']
+    )
+    db.session.add(new_tag)
+    db.session.commit()
+    return redirect('/tags')
+
+
+@app.route('/tags/<int:tag_id>/edit')
+def edit_tag_form(tag_id):
+    tag = Tag.query.get_or_404(tag_id)
+    return render_template('edit-tag.html', tag=tag)
+
+
+@app.route('/tags/<int:tag_id>/edit')
+def edit_tag_submit(tag_id):
+    tag = Tag.query.get_or_404(tag_id)
+    tag.name = request.form['name']
+    db.session.add(tag)
+    db.session.commit()
+    return redirect('/tags')
+
+
+@app.route('/tags/<int:tag_id>/delete')
+def delete_tag(tag_id):
+    tag = Tag.query.get_or_404(tag_id)
+    db.session.delete(tag)
+    db.session.commit()
+    return redirect('/tags')
